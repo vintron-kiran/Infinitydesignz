@@ -106,7 +106,7 @@ const ProductTopBar = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const res = await axios.get(`${BASE_URL}/products`);
+                const res = await axios.get(`${BASE_URL}/products/search?mainCategoryId=0&subCategoryId=0`);
                 let data = res.data;
                 console.log("Fetched products:", data);
 
