@@ -1,3 +1,3 @@
-const BASE_URL = 'https://68.183.89.229';
+const BASE_URL = 'https://infinitydesignz.com/api';
 
 export default BASE_URL;
