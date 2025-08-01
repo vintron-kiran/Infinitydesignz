@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Carousel } from "react-bootstrap";
-import { Link } from "react-router-dom"; // Only if using react-router
-
+import { getToken } from "../../utils/auth";
+import BASE_URL from "../../config/config";
+import axios from "axios";
 import "../../css/user/userstyle.css";
 import "../../css/user/whishlist.css";
 
@@ -14,14 +15,51 @@ import Star from "../../img/star.svg";
 import Star1 from "../../img/star1.svg";
 import Sofa from "../../img/sofa.png";
 import Icon from "../../img/icon.svg";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchSizes } from "../../redux/actions/sizeAction";
+import { addToWishlist, deleteWishlistItem } from "../../redux/actions/whishlistAction";
+import { fetchUserProductDetailsById } from "../../redux/actions/userProductDetailsAction";
+import RelatedProducts from "../../components/relatedProducts";
+
 
 export default function WishlistPage() {
+  const dispatch = useDispatch();
   const [quantity, setQuantity] = useState(1);
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const { sizes = [] } = useSelector((state) => state.sizes || {});
+  const { product, loading } = useSelector((state) => state.userProductDetails);
 
+  const fetchWishlist = async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${getToken()}` } };
+      const res = await axios.get(`${BASE_URL}/wishlist`, config);
+      setWishlistItems(res.data || []);
+    } catch (err) {
+      console.error("Failed to load wishlist", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
+  useEffect(() => {
+    dispatch(fetchSizes());
+  }, [dispatch])
+
+  useEffect(() => {
+    if (wishlistItems.length > 0) {
+      const firstItem = wishlistItems[0];
+      const productId = firstItem?.product?.id;
+      const variantId = firstItem?.variantId;
+
+      if (productId) {
+        dispatch(fetchUserProductDetailsById(productId, variantId));
+      }
+    }
+  }, [wishlistItems, dispatch]);
   const increment = () => setQuantity((prev) => Math.min(prev + 1, 99));
   const decrement = () => setQuantity((prev) => Math.max(prev - 1, 1));
-
-  const wishlistItems = [1, 2, 3];
 
   const relatedProducts = [
     {
@@ -41,92 +79,110 @@ export default function WishlistPage() {
       rating: "4.7 | 10K"
     }
   ];
-
   return (
     <>
-      <Header />
-<section className="bg-light py-3">
+      <Header wishlistCount={wishlistItems.length} />
+      <section className="bg-light py-3">
         <div className="container shop">
-            <div class="row">
-                <div className="col-lg-12">
-                    <a href=""><strong>My Account</strong></a>
-                </div>
+          <div class="row">
+            <div className="col-lg-12">
+              <a href=""><strong>My Account</strong></a>
             </div>
+          </div>
         </div>
-    </section>
-    
-
+      </section>
       <section className="py-5">
         <div className="container shop">
           <div className="row">
-            {/* Sidebar */}
             <div className="col-md-2 sidebars">
               <a href="/profile">Profile</a>
               <a href="/orders">Orders</a>
               <a href="/wishlist" className="active">Wishlist</a>
               <a href="/addressbook">Address book</a>
             </div>
-
-            {/* Wishlist Content */}
             <div className="col-md-7">
               <div className="wishlist-header">
                 <h2 className="m-0">Wishlist</h2>
               </div>
 
-              {wishlistItems.map((item, index) => (
-                <div key={index} className="wishlist-item border-between d-flex">
-                  <div className="col-3">
-                    <img src={Sofa} alt="Sofa" className="wishlist-item-img img-fluid" />
-                  </div>
-                  <div className="details ms-3">
-                    <h5>Andres Fabric 2 Seater Sofa In Sandy Brown Colour</h5>
-                    <p>36-Month Warranty Available</p>
-                    <div className="d-flex align-items-center mb-3">
-                      <label className="me-2 fw-semibold">Size</label>
-                      <select className="form-select w-auto me-4">
-                        <option>L</option>
-                        <option>M</option>
-                        <option>S</option>
-                      </select>
+              {wishlistItems.map((item, index) => {
+                const product = item?.product || {};
+                const imageUrl = item?.imageUrl?.startsWith('http') ? item.imageUrl : `${BASE_URL}${item.imageUrl}`;
+                const imageAlt = item?.imageAlt || product?.title || 'Product Image';
+                return (
+                  <div key={index} className="wishlist-item border-between d-flex">
+                    <div className="col-3">
+                      <img
+                        src={imageUrl}
+                        alt={imageAlt}
+                        className="wishlist-item-img img-fluid"
+                      />
+                    </div>
+                    <div className="details ms-3">
+                      <h5>{item?.title}</h5>
 
-                      <label className="me-2 fw-semibold">Qty</label>
-                      <div className="qty-box d-flex align-items-center">
-                        <button className="btn-qty" onClick={decrement}>-</button>
-                        <input
-                          type="text"
-                          className="qty-input text-center"
-                          value={quantity.toString().padStart(2, "0")}
-                          readOnly
-                        />
-                        <button className="btn-qty" onClick={increment}>+</button>
+                      <div className="d-flex align-items-center mb-3">
+                        <label className="me-2 fw-semibold">Size</label>
+                        {(() => {
+                          const selectedSizeId = item?.size?.toLowerCase();
+                          console.log('selectedSizeId', selectedSizeId)
+                          const sortedSizes = [...sizes].sort((a, b) => {
+                            if (a.id === selectedSizeId) return -1;
+                            if (b.id === selectedSizeId) return 1;
+                            return 0;
+                          });
+                          return (
+                            <select className="form-select w-auto me-4" value={selectedSizeId}>
+                              {sortedSizes.map((size) => (
+                                <option key={size.id} value={size.title?.toLowerCase()}>
+                                  {size.title}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
+                        <label className="me-2 fw-semibold">Qty</label>
+                        <div className="qty-box d-flex align-items-center">
+                          <button className="btn-qty" onClick={decrement}>-</button>
+                          <input
+                            type="text"
+                            className="qty-input text-center"
+                            value={quantity.toString().padStart(2, '0')}
+                            readOnly
+                          />
+                          <button className="btn-qty" onClick={increment}>+</button>
+                        </div>
+                      </div>
+                      <div className="price">
+                        <span className="currency">₹</span>{item?.price || 0}{" "}
+                        <small>MRP: <span className="currency">₹</span>{item?.mrp || 0}</small>
+                      </div>
+                      <div className="icons">
+                        <span>
+                          <i className="bi bi-arrow-return-right icon-return"></i> Easy 14 days return & exchange
+                        </span>
+                        <span>
+                          <i className="bi bi-truck icon-delivery"></i> Estimated delivery by 13 Aug
+                        </span>
+                      </div>
+                      <div className="actions mt-3">
+                        <button className="btn me-2">
+                          <i className="bi bi-cart"></i> Move to cart
+                        </button>
+                        <button className="btn" onClick={async () => {
+                          await dispatch(deleteWishlistItem(item.id));
+                          fetchWishlist();
+                        }}>
+                          <i className="bi bi-trash"></i> Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="price">
-                      <span className="currency">₹</span>2405.00{" "}
-                      <small>MRP: <span className="currency">₹</span>33679.00</small>
-                    </div>
-                    <div className="icons">
-                      <span>
-                        <i className="bi bi-arrow-return-right icon-return"></i> Easy 14 days return & exchange available
-                      </span>
-                      <span>
-                        <i className="bi bi-truck icon-delivery"></i> Estimated delivery by 13 Aug
-                      </span>
-                    </div>
-                    <div className="actions mt-3">
-                      <button className="btn me-2">
-                        <i className="bi bi-cart"></i> Move to cart
-                      </button>
-                      <button className="btn">
-                        <i className="bi bi-trash"></i> Delete
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Related Products */}
+            {/* Related Products Section */}
             <div className="col-md-3">
               <div className="ad-banner mb-4">
                 <img src={AdBanner} alt="Special Sale" className="img-fluid" />
@@ -168,10 +224,10 @@ export default function WishlistPage() {
                 </Carousel>
               </div>
             </div>
+
           </div>
         </div>
       </section>
-
       <Footer />
     </>
   );

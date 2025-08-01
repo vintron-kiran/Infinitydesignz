@@ -109,10 +109,10 @@ const ProductsPage = () => {
       <section className="terms-of-service">
         <div className="container">
           <h2>Products</h2>
-          {listSubCatId && (
+          {subCategoryId && (
             <div className="mb-3">
               <h5>
-                {getCategoryTitle(listSubCatId)} ({products.length} item
+                {getCategoryTitle(subCategoryId)} ({products.length} item
                 {products.length !== 1 ? 's' : ''})
               </h5>
             </div>

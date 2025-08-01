@@ -151,6 +151,7 @@ function App() {
           <Route path='/admin/edit-product-filters' element={<EditProductFilters />}></Route>
           <Route path='/admin/edit-product-images' element={<EditProductImages />}></Route>
           <Route path='/products' element={<ProductsPage />}></Route>
+          
 
 
         </Routes>

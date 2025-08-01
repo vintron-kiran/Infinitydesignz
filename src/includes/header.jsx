@@ -14,10 +14,15 @@ import Favourite from '../../src/img/favorite.svg';
 import AccountBox from '../../src/img/account_box.svg';
 import ShoppingCart from '../../src/img/shopping_cart.svg';
 import MenuImg from '../../src/img/menu-img.webp';
+import axios from "axios";
+import BASE_URL from "../config/config";
+import { getToken } from "../utils/auth";
 
-export default function Header() {
+export default function Header({wishlistCount}) {
   const dispatch = useDispatch();
   const { categories = [] } = useSelector((state) => state.categories || {});
+  // const [wishListItems, setWishlistItems] = useState([])
+  // const wishlistCount = wishListItems.length;
   console.log('categories', categories)
   const navigate = useNavigate();
 
@@ -28,6 +33,20 @@ export default function Header() {
   useEffect(() => {
     dispatch(fetchCategories());
   }, [dispatch]);
+
+  // useEffect(() => {
+  //   const fetchWishlist = async () => {
+  //     try {
+  //       const config = { headers: { Authorization: `Bearer ${getToken()}` } };
+  //       const res = await axios.get(`${BASE_URL}/wishlist`, config);
+  //       setWishlistItems(res.data || []);
+  //     } catch (err) {
+  //       console.error("Failed to load wishlist", err);
+  //     }
+  //   };
+
+  //   fetchWishlist();
+  // }, []);
 
   const suggestionsList = [
     "4 Door Wardrobes",
@@ -108,7 +127,7 @@ export default function Header() {
                           </Link>
                         ))
                       ) : (
-                    ''
+                        ''
                       )}
                     </div>
                   );
@@ -176,9 +195,21 @@ export default function Header() {
               <a href="/wishlist" className="text-decoration-none text-dark">
                 <span style={{ position: "relative", display: "inline-block" }}>
                   <img src={Favourite} alt="wishlist" />
-                  <span className="badge rounded-pill text-white" style={{ backgroundColor: "rgb(212, 14, 0)", position: "absolute", top: -8, right: -8, fontSize: "0.65rem", padding: "2px 6px" }}>
-                    2
-                  </span>
+                  {wishlistCount > 0 && (
+                    <span
+                      className="badge rounded-pill text-white"
+                      style={{
+                        backgroundColor: "rgb(212, 14, 0)",
+                        position: "absolute",
+                        top: -8,
+                        right: -8,
+                        fontSize: "0.65rem",
+                        padding: "2px 6px",
+                      }}
+                    >
+                      {wishlistCount}
+                    </span>
+                  )}
                 </span>
                 Wishlist
               </a>
